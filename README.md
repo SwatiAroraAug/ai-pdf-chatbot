@@ -1,4 +1,12 @@
-# AI PDF Chatbot & Agent Powered by LangChain and LangGraph
+# AI PDF Chatbot & Agent
+
+## Overview
+
+The AI PDF Chatbot follows a **Retrieval-Augmented Generation (RAG)** architecture that enables users to upload PDF documents and ask natural language questions about their content. The system separates document ingestion from query processing, allowing efficient indexing, semantic retrieval, and AI-powered response generation.
+
+The application is built using **Next.js**, **LangChain**, **LangGraph**, **OpenAI**, and **Supabase pgvector**, providing a scalable and modular architecture.
+
+---
 
 ## Table of Contents
 
@@ -61,6 +69,247 @@ The system consists of:
   - **Retrieval** (`src/retrieval_graph.ts`) - question-answering over the ingested documents
   - **Configuration** (`src/shared/configuration.ts`) - handles configuration for the backend api including model providers and vector stores
 - **Frontend**: A Next.js/React app that provides a web UI for users to upload PDFs and chat with the AI.
+---
+
+## High-Level Architecture
+
+```text
+                                ┌─────────────────────┐
+                                │       User          │
+                                └──────────┬──────────┘
+                                           │
+                           Upload PDF / Ask Questions
+                                           │
+                                           ▼
+                          ┌────────────────────────────┐
+                          │      Next.js Frontend      │
+                          │----------------------------│
+                          │ • Chat Interface           │
+                          │ • PDF Upload               │
+                          │ • Streaming Responses      │
+                          │ • Source References        │
+                          └────────────┬───────────────┘
+                                       │
+                        REST API Calls │
+                                       ▼
+                  ┌─────────────────────────────────────┐
+                  │         LangGraph Backend           │
+                  │─────────────────────────────────────│
+                  │                                     │
+                  │  Ingestion Workflow                 │
+                  │   • Parse PDF                       │
+                  │   • Chunk Document                  │
+                  │   • Generate Embeddings             │
+                  │   • Store Vectors                   │
+                  │                                     │
+                  │  Retrieval Workflow                 │
+                  │   • Receive Query                   │
+                  │   • Semantic Search                 │
+                  │   • Build Context                   │
+                  │   • Generate Answer                 │
+                  └──────────────┬──────────────────────┘
+                                 │
+                  ┌──────────────┴──────────────┐
+                  │                             │
+                  ▼                             ▼
+        ┌───────────────────┐         ┌─────────────────────┐
+        │ OpenAI Embeddings │         │     OpenAI LLM      │
+        └─────────┬─────────┘         └──────────┬──────────┘
+                  │                              ▲
+                  ▼                              │
+          ┌────────────────────────────────────────────┐
+          │      Supabase + pgvector Database          │
+          │────────────────────────────────────────────│
+          │ • Document Chunks                          │
+          │ • Vector Embeddings                        │
+          │ • Metadata                                │
+          │ • Similarity Search                        │
+          └────────────────────────────────────────────┘
+```
+
+---
+
+## Document Ingestion Flow
+
+When a user uploads a PDF, the system executes the following pipeline:
+
+```text
+PDF Upload
+     │
+     ▼
+Validate File
+     │
+     ▼
+Extract Text
+     │
+     ▼
+Split into Chunks
+     │
+     ▼
+Generate Embeddings
+     │
+     ▼
+Store in Supabase pgvector
+     │
+     ▼
+Ready for Semantic Retrieval
+```
+
+### Steps
+
+1. Upload the PDF through the web interface.
+2. Extract text from each page.
+3. Split the content into manageable chunks.
+4. Generate vector embeddings for each chunk.
+5. Store embeddings and metadata in Supabase.
+6. Make the document available for semantic search.
+
+---
+
+## Question Answering Flow
+
+When a user asks a question, the application retrieves relevant document sections before generating the answer.
+
+```text
+User Question
+      │
+      ▼
+Generate Query Embedding
+      │
+      ▼
+Semantic Search
+      │
+      ▼
+Retrieve Relevant Chunks
+      │
+      ▼
+Build Prompt
+      │
+      ▼
+OpenAI LLM
+      │
+      ▼
+Stream Answer
+      │
+      ▼
+Display Sources
+```
+
+---
+
+## Core Components
+
+### Frontend
+
+Responsible for:
+
+- PDF uploads
+- Chat interface
+- Streaming AI responses
+- Source citation display
+- User interaction
+
+**Technology**
+
+- Next.js
+- React
+- TypeScript
+- Tailwind CSS
+
+---
+
+### LangGraph Orchestrator
+
+Coordinates the application's workflows.
+
+Responsibilities:
+
+- Document ingestion
+- Retrieval pipeline
+- Prompt construction
+- Workflow orchestration
+- AI response generation
+
+---
+
+### LangChain
+
+Provides reusable AI building blocks:
+
+- Prompt templates
+- Embedding generation
+- Vector search integration
+- LLM abstraction
+- Retrieval pipeline
+
+---
+
+### OpenAI
+
+Used for:
+
+- Text embeddings
+- Natural language generation
+- Context-aware question answering
+
+---
+
+### Supabase pgvector
+
+Stores:
+
+- Document chunks
+- Embedding vectors
+- Metadata
+
+Provides:
+
+- Fast semantic similarity search
+- Persistent document storage
+
+---
+
+## Component Interaction
+
+```text
+             ┌────────────┐
+             │    User    │
+             └─────┬──────┘
+                   │
+                   ▼
+        ┌───────────────────────┐
+        │   Next.js Frontend    │
+        └──────────┬────────────┘
+                   │
+         REST API Requests
+                   │
+                   ▼
+        ┌───────────────────────┐
+        │   LangGraph Backend   │
+        └──────────┬────────────┘
+                   │
+      ┌────────────┴────────────┐
+      │                         │
+      ▼                         ▼
+OpenAI Embeddings          OpenAI Chat Model
+      │                         ▲
+      └────────────┬────────────┘
+                   ▼
+      Supabase Vector Database
+```
+
+---
+
+## Design Principles
+
+- **Retrieval-Augmented Generation (RAG)** for grounded responses.
+- **Separation of Ingestion and Retrieval** for better scalability.
+- **Semantic Search** using vector embeddings.
+- **Streaming Responses** to improve user experience.
+- **Source Attribution** for transparency and trust.
+- **Modular Components** allowing easy replacement of LLMs, embedding models, or vector databases.
+- **Scalable Architecture** supporting large document collections.
+
 ---
 
 ## Prerequisites
@@ -242,7 +491,6 @@ You can customize the agent on the backend and frontend.
 - You can modify the file upload restrictions in the `app/api/ingest` route.
 - In `constants/graphConfigs.ts`, you can change the default config objects sent to the ingestion and retrieval graphs. These include the model provider, k value (no of source documents to retrieve), and retriever provider (i.e. vector store).
 
-
 ## Troubleshooting
 1. .env Not Loaded
    - Make sure you copied .env.example to .env in both backend and frontend.
@@ -259,3 +507,17 @@ You can customize the agent on the backend and frontend.
 
 5. Network Errors
    - Frontend must point to the correct NEXT_PUBLIC_LANGGRAPH_API_URL. By default, it is http://localhost:2024.
+
+---
+  
+## Future Enhancements
+
+- Multi-document retrieval
+- Hybrid keyword + vector search
+- OCR support for scanned PDFs
+- Multi-user document workspaces
+- Conversation memory
+- Citation highlighting within PDFs
+- Support for local LLMs (Ollama, Llama 3, Mistral)
+- Additional vector databases (Pinecone, Weaviate, Qdrant)
+
